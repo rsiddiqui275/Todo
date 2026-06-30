@@ -1,0 +1,51 @@
+<div class="todo-container">
+  <h1>Todo App</h1>
+
+  <div *ngIf="error" class="error-banner">{{ error }}</div>
+
+  <!-- Add Todo -->
+  <div class="add-todo">
+    <input
+      type="text"
+      [(ngModel)]="newTitle"
+      placeholder="What needs to be done?"
+      (keyup.enter)="addTodo()"
+    />
+    <button (click)="addTodo()" [disabled]="!newTitle.trim()">Add</button>
+  </div>
+
+  <!-- Stats -->
+  <p class="stats" *ngIf="todos.length">
+    {{ remaining }} of {{ todos.length }} remaining
+  </p>
+
+  <!-- Todo List -->
+  <ul class="todo-list" *ngIf="todos.length; else empty">
+    <li *ngFor="let todo of todos" [class.completed]="todo.isCompleted">
+      <input type="checkbox" [checked]="todo.isCompleted" (change)="toggleComplete(todo)" />
+
+      <ng-container *ngIf="editingId === todo.id; else viewMode">
+        <input
+          class="edit-input"
+          type="text"
+          [(ngModel)]="editingTitle"
+          (keyup.enter)="saveEdit(todo)"
+          (keyup.escape)="cancelEdit()"
+          autofocus
+        />
+        <button class="btn-save" (click)="saveEdit(todo)">Save</button>
+        <button class="btn-cancel" (click)="cancelEdit()">Cancel</button>
+      </ng-container>
+
+      <ng-template #viewMode>
+        <span class="title" (dblclick)="startEdit(todo)">{{ todo.title }}</span>
+        <button class="btn-edit" (click)="startEdit(todo)">Edit</button>
+        <button class="btn-delete" (click)="deleteTodo(todo.id)">Delete</button>
+      </ng-template>
+    </li>
+  </ul>
+
+  <ng-template #empty>
+    <p class="empty-msg">No todos yet. Add one above!</p>
+  </ng-template>
+</div>
