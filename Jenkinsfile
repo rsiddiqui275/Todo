@@ -31,7 +31,12 @@ pipeline {
             steps {
                 echo "Running frontend dependency audit..."
                 bat '''
-                    npm ci || exit /b 1
+                    if exist package-lock.json (
+                        npm ci || exit /b 1
+                    ) else (
+                        echo package-lock.json not found - using npm install
+                        npm install --legacy-peer-deps || exit /b 1
+                    )
                     npm audit --audit-level=high || exit /b 1
                 '''
             }
@@ -112,7 +117,9 @@ pipeline {
         }
         failure {
             echo "Frontend deployment FAILED. Printing container logs..."
-            bat 'docker logs %CONTAINER% --tail=50'
+            bat '''
+                docker logs %CONTAINER% --tail=50 || echo Container not found, skipping logs
+            '''
         }
     }
 }
