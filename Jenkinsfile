@@ -25,50 +25,48 @@ pipeline {
         stage('Docker Build') {
             steps {
                 echo "Building frontend Docker image..."
-                sh """
-                    docker build -t ${IMAGE_NAME}:latest .
-                    echo "Build complete: ${IMAGE_NAME}:latest"
-                """
+                bat '''
+                    docker build -t %IMAGE_NAME%:latest .
+                    echo Build complete: %IMAGE_NAME%:latest
+                '''
             }
         }
 
         stage('Tag Image') {
             steps {
                 echo "Tagging image as build #${IMAGE_TAG}..."
-                sh """
-                    docker tag ${IMAGE_NAME}:latest ${IMAGE_NAME}:${IMAGE_TAG}
-                    echo "Tagged: ${IMAGE_NAME}:${IMAGE_TAG}"
-                """
+                bat '''
+                    docker tag %IMAGE_NAME%:latest %IMAGE_NAME%:%IMAGE_TAG%
+                    echo Tagged: %IMAGE_NAME%:%IMAGE_TAG%
+                '''
             }
         }
 
         stage('Deploy') {
             steps {
                 echo "Deploying frontend container..."
-                sh """
-                    docker stop ${CONTAINER} || true
-                    docker rm   ${CONTAINER} || true
+                bat '''
+                    docker stop %CONTAINER% 2>nul || echo Container not running
+                    docker rm %CONTAINER% 2>nul || echo Container not present
 
-                    docker run -d \
-                        --name ${CONTAINER} \
-                        --restart unless-stopped \
-                        -p ${PORT}:8080 \
-                        ${IMAGE_NAME}:latest
+                    docker run -d ^
+                        --name %CONTAINER% ^
+                        --restart unless-stopped ^
+                        -p %PORT%:8080 ^
+                        %IMAGE_NAME%:latest
 
-                    echo "Container ${CONTAINER} started on port ${PORT}"
-                """
+                    echo Container %CONTAINER% started on port %PORT%
+                '''
             }
         }
 
         stage('Health Check') {
             steps {
                 echo "Waiting for frontend to start..."
-                sh """
-                    sleep 10
-                    curl -f http://localhost:${PORT} \
-                        && echo "Frontend is healthy" \
-                        || exit 1
-                """
+                bat '''
+                    timeout /t 10 /nobreak >NUL
+                    curl -f http://localhost:%PORT% && echo Frontend is healthy || exit /b 1
+                '''
             }
         }
     }
@@ -85,7 +83,7 @@ pipeline {
         }
         failure {
             echo "Frontend deployment FAILED. Printing container logs..."
-            sh "docker logs ${CONTAINER} --tail=50 || true"
+            bat 'docker logs %CONTAINER% --tail=50'
         }
     }
 }
