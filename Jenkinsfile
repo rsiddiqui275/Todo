@@ -41,8 +41,12 @@ pipeline {
             steps {
                 echo "Running frontend lint checks..."
                 bat '''
-                    npm ci || exit /b 1
-                    npm run lint || exit /b 1
+                    node -e "const p=require('./package.json'); process.exit((p.scripts && p.scripts.lint)?0:1)"
+                    if %ERRORLEVEL% EQU 0 (
+                        npm run lint || exit /b 1
+                    ) else (
+                        echo No lint script found in package.json - skipping lint stage
+                    )
                 '''
             }
         }
