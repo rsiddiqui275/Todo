@@ -6,6 +6,11 @@
 pipeline {
     agent any
 
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
     environment {
         IMAGE_NAME = "todo-frontend"
         IMAGE_TAG  = "${env.BUILD_NUMBER}"
@@ -22,7 +27,27 @@ pipeline {
             }
         }
 
-        stage('Docker Build') {
+        stage('Audit') {
+            steps {
+                echo "Running frontend dependency audit..."
+                bat '''
+                    npm ci || exit /b 1
+                    npm audit --audit-level=high || exit /b 1
+                '''
+            }
+        }
+
+        stage('Lint') {
+            steps {
+                echo "Running frontend lint checks..."
+                bat '''
+                    npm ci || exit /b 1
+                    npm run lint || exit /b 1
+                '''
+            }
+        }
+
+        stage('Build Image') {
             steps {
                 echo "Building frontend Docker image..."
                 bat '''
